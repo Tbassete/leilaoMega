@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leilão</title>
+</head>
+<body>
+    <h1>Leilão: <span id="item"></span></h1>
+    <p>Lance Mínimo: R$ <span id="lanceMinimo"></span></p>
+    <p>Lance Atual: R$ <span id="lanceAtual"></span> por <span id="ultimoLicitante"></span></p>
+
+    <h2>Fazer Lance</h2>
+    <input type="text" id="usuario" placeholder="Seu nome">
+    <input type="number" id="valorLance" placeholder="Valor do lance">
+    <button onclick="fazerLance()">Lance</button>
+
+    <p id="mensagem"></p>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Atualiza a interface com o estado atual do leilão
+        socket.on('estadoAtual', (leilao) => {
+            document.getElementById('item').innerText = leilao.item;
+            document.getElementById('lanceMinimo').innerText = leilao.lanceMinimo;
+            document.getElementById('lanceAtual').innerText = leilao.lanceAtual;
+            document.getElementById('ultimoLicitante').innerText = leilao.ultimoLicitante || 'Ninguém';
+        });
+
+        // Atualiza a interface quando há um novo lance
+        socket.on('novoLance', (leilao) => {
+            document.getElementById('lanceAtual').innerText = leilao.lanceAtual;
+            document.getElementById('ultimoLicitante').innerText = leilao.ultimoLicitante;
+            document.getElementById('mensagem').innerText = '';
+        });
+
+        // Exibe uma mensagem de erro caso o lance seja inválido
+        socket.on('lanceInvalido', (data) => {
+            document.getElementById('mensagem').innerText = data.mensagem;
+        });
+
+        // Função para enviar um lance
+        function fazerLance() {
+            const usuario = document.getElementById('usuario').value;
+            const valorLance = parseFloat(document.getElementById('valorLance').value);
+
+            if (usuario && valorLance) {
+                socket.emit('fazerLance', { usuario, valor: valorLance });
+            } else {
+                alert('Preencha todos os campos.');
+            }
+        }
+    </script>
+</body>
+</html>
